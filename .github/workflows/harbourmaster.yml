@@ -1,0 +1,110 @@
+name: Harbourmaster Deploy Check
+
+on:
+  pull_request:
+    branches: [main, production]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service name'
+        required: false
+        default: 'payments-service'
+      release:
+        description: 'Release version'
+        required: false
+        default: 'latest'
+
+jobs:
+  deploy-readiness:
+    name: ⚓ Deploy Readiness Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Coral
+        run: |
+          brew install withcoral/tap/coral
+          coral --version
+
+      - name: Configure Coral sources
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          SENTRY_TOKEN: ${{ secrets.SENTRY_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APPLICATION_KEY: ${{ secrets.DD_APPLICATION_KEY }}
+          PAGERDUTY_API_TOKEN: ${{ secrets.PAGERDUTY_API_TOKEN }}
+          STATUSGATOR_API_TOKEN: ${{ secrets.STATUSGATOR_API_TOKEN }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+        run: |
+          coral source add github --token "$GITHUB_TOKEN"
+          coral source add sentry --token "$SENTRY_TOKEN" --org "$SENTRY_ORG"
+          coral source add datadog --api-key "$DD_API_KEY" --app-key "$DD_APPLICATION_KEY"
+          coral source add pagerduty --token "$PAGERDUTY_API_TOKEN"
+          coral source add statusgator --token "$STATUSGATOR_API_TOKEN"
+          coral source add linear --token "$LINEAR_API_KEY"
+
+      - name: Run Harbourmaster Check
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          npx tsx src/index.ts check \
+            --service "${{ github.event.inputs.service || 'payments-service' }}" \
+            --release "${{ github.event.inputs.release || 'latest' }}" \
+            --branch "${{ github.head_ref || github.ref_name }}" \
+            --no-slack \
+            --json > result.json
+
+      - name: Parse verdict
+        id: verdict
+        run: |
+          VERDICT=$(cat result.json | jq -r '.verdict')
+          RISK=$(cat result.json | jq -r '.riskScore')
+          REASONING=$(cat result.json | jq -r '.reasoning')
+          echo "verdict=$VERDICT" >> $GITHUB_OUTPUT
+          echo "risk=$RISK" >> $GITHUB_OUTPUT
+          echo "reasoning=$REASONING" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const verdict = '${{ steps.verdict.outputs.verdict }}';
+            const risk = '${{ steps.verdict.outputs.risk }}';
+            const reasoning = `${{ steps.verdict.outputs.reasoning }}`;
+            const emoji = verdict === 'GO' ? '🟢' : verdict === 'CAUTION' ? '🟡' : '🔴';
+            
+            const body = `## ⚓ Harbourmaster Deploy Check
+
+            ${emoji} **${verdict}** · Risk Score: ${risk}/100
+
+            ${reasoning}
+
+            ---
+            *Checked 6 sources via Coral*`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body.split('\n').map(l => l.trim()).join('\n')
+            });
+
+      - name: Fail if HOLD
+        if: steps.verdict.outputs.verdict == 'HOLD'
+        run: |
+          echo "🔴 Deploy blocked: Harbourmaster verdict is HOLD"
+          echo "Risk Score: ${{ steps.verdict.outputs.risk }}/100"
+          exit 1
