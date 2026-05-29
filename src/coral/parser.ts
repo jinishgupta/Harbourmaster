@@ -36,7 +36,7 @@ export function parseCoralTable(raw: string): CoralRow[] {
   // 2. Extract the header from the first pipe-delimited line
   // 3. Extract data from subsequent pipe-delimited lines
 
-  const isBorderLine = (line: string) => /^\+[-+]+\+$/.test(line.trim());
+  const isBorderLine = (line: string) => /^\+[-+]*\+$/.test(line.trim());
 
   // Separate content lines (pipe-delimited) from border lines
   const contentLines = lines.filter((l) => !isBorderLine(l));
@@ -58,7 +58,7 @@ export function parseCoralTable(raw: string): CoralRow[] {
 
   // Remaining content lines are data rows (skip any remaining separator lines)
   const dataLines = contentLines.slice(1).filter(
-    (l) => !l.match(/^[\s|─-]+$/)
+    (l) => !l.match(/^[\s|─-]+$/) && !l.match(/^\s*\(\d+\s+rows?\)\s*$/)
   );
 
   // Parse rows
@@ -114,7 +114,7 @@ function parseGitHub(
   let status: SourceStatus = 'pass';
   let riskScore = 0;
 
-  if (failedWorkflows.length > 0) {
+  if (!ciPassed || failedWorkflows.length > 0) {
     status = 'fail';
     riskScore = 80;
   } else if (openPRs.length > 0) {
@@ -130,7 +130,9 @@ function parseGitHub(
     source: 'github',
     status,
     summary: ciPassed
-      ? `All ${mergedPRs.length} release PRs merged. CI passed on ${options.branch || 'main'} (${ciTimeAgo}).`
+      ? (workflows.length === 0
+          ? `All ${mergedPRs.length} release PRs merged. No CI workflows found on ${options.branch || 'main'}.`
+          : `All ${mergedPRs.length} release PRs merged. CI passed on ${options.branch || 'main'} (${ciTimeAgo}).`)
       : `CI failed on ${options.branch || 'main'}. ${failedWorkflows.length} workflow(s) failing.`,
     details: {
       totalPRs: prs.length,

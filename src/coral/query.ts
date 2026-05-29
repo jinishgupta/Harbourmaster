@@ -164,14 +164,17 @@ export async function executeCoralQuery(query: string): Promise<string> {
 
   if (isWindows) {
     // On Windows, use execFile to bypass cmd.exe's quoting issues
+    // Base64 encode the query so we don't have to worry about wsl.exe stripping double quotes
+    // and breaking the bash -c execution string.
+    const b64Query = Buffer.from(singleLineQuery).toString('base64');
     try {
       const { stdout, stderr } = await execFileAsync('wsl', [
         '--',
         'bash',
         '-c',
-        `${pathPrefix} coral sql "${escapedQuery}"`
+        `${pathPrefix} coral sql "$(echo ${b64Query} | base64 -d)"`
       ], {
-        timeout: 30_000,
+        timeout: 120_000,
         maxBuffer: 1024 * 1024 * 10,
       });
 
@@ -195,7 +198,7 @@ export async function executeCoralQuery(query: string): Promise<string> {
     const { stdout, stderr } = await execAsync(
       `${pathPrefix} coral sql "${escapedQuery}"`,
       {
-        timeout: 30_000,
+        timeout: 120_000,
         maxBuffer: 1024 * 1024 * 10,
       }
     );

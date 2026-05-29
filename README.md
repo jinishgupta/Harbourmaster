@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚓ Harbourmaster
+# Harbourmaster
 
 ### Deploy Readiness Intelligence Agent
 
@@ -34,18 +34,18 @@ One command. Six sources. One confident verdict.
 
 ```mermaid
 graph LR
-    A["⚓ harbourmaster check"] --> B["🪸 Coral SQL Engine"]
+    A["harbourmaster check"] --> B["Coral SQL Engine"]
     B --> C["GitHub"]
     B --> D["Sentry"]
     B --> E["Datadog"]
     B --> F["PagerDuty"]
     B --> G["StatusGator"]
     B --> H["Linear"]
-    C & D & E & F & G & H --> I["📊 Parser"]
-    I --> J["🤖 Gemini 2.5 Flash"]
-    J --> K["✅ GO / 🔴 HOLD"]
-    K --> L["💬 Slack"]
-    K --> M["📝 Deploy Log"]
+    C & D & E & F & G & H --> I["Parser"]
+    I --> J["Gemini 2.5 Flash"]
+    J --> K["[GO] / [HOLD]"]
+    K --> L["Slack"]
+    K --> M["Deploy Log"]
 ```
 
 ### What Each Source Checks
@@ -65,21 +65,21 @@ graph LR
 
 ```
 ╭──────────────────────────────────────────────────╮
-│  ⚓ HARBOURMASTER CHECK                          │
+│  HARBOURMASTER CHECK                             │
 │  service: payments-service   release: v2.4.1     │
 ╰──────────────────────────────────────────────────╯
 
-  ✅  GitHub       All 4 release PRs merged. CI passed on main (3m ago).
-  ⚠️  Sentry       Error rate 1.4× above 24h baseline. No new fatals.
-  ✅  Datadog      All 5 monitors green.
-  🔴  PagerDuty    ACTIVE INCIDENT · "Auth service degraded" · P2 · 14m
-  ✅  StatusGator  Stripe ✓  Twilio ✓  AWS ✓  All operational.
-  ✅  Linear       7/7 issues in "Release v2.4.1" closed.
+  [PASS] GitHub       All 4 release PRs merged. CI passed on main (3m ago).
+  [WARN] Sentry       Error rate 1.4× above 24h baseline. No new fatals.
+  [PASS] Datadog      All 5 monitors green.
+  [FAIL] PagerDuty    ACTIVE INCIDENT · "Auth service degraded" · P2 · 14m
+  [PASS] StatusGator  Stripe ✓  Twilio ✓  AWS ✓  All operational.
+  [PASS] Linear       7/7 issues in "Release v2.4.1" closed.
   ──────────────────────────────────────────────────────────
   Risk Score:  ████████████████████████░░░░░░  78/100
 
 ╭──────────────────────────────────────────────────╮
-│  🔴  HOLD  ·  high confidence                    │
+│  [HOLD]  ·  high confidence                      │
 │                                                  │
 │  PagerDuty shows an active P2 incident on the    │
 │  auth service that began 14 minutes ago.         │
@@ -208,9 +208,9 @@ Harbourmaster computes a weighted risk score (0–100):
 
 | Range | Verdict | Meaning |
 |-------|---------|---------|
-| 0–30 | 🟢 **GO** | Safe to deploy |
-| 31–60 | 🟡 **CAUTION** | Deploy with awareness |
-| 61–100 | 🔴 **HOLD** | Do not deploy |
+| 0–30 | **[GO]** | Safe to deploy |
+| 31–60 | **[CAUTION]** | Deploy with awareness |
+| 61–100 | **[HOLD]** | Do not deploy |
 
 Source weights: PagerDuty (25%), GitHub (20%), Sentry (20%), Datadog (15%), StatusGator (10%), Linear (10%).
 
@@ -226,3 +226,4 @@ Track 1: Enterprise Agent
 ## License
 
 MIT
+

@@ -28,7 +28,7 @@ const program = new Command();
 program
   .name('harbourmaster')
   .description(
-    '⚓ Deploy readiness intelligence agent — 6 sources, one verdict, under 10 seconds.'
+    'Deploy readiness intelligence agent — 6 sources, one verdict, under 10 seconds.'
   )
   .version('1.0.0');
 
@@ -95,6 +95,9 @@ async function runCheck(options: CheckOptions): Promise<void> {
   const startTime = Date.now();
 
   // Step 1: Query all sources via Coral
+  const ghOwner = process.env.GITHUB_OWNER || 'withcoral';
+  const ghRepo = process.env.GITHUB_REPO || 'coral';
+  
   const spinner = createSpinner('Querying 6 sources via Coral...');
   spinner.start();
 
@@ -187,7 +190,7 @@ async function runWatch(options: WatchOptions): Promise<void> {
       // Detect state transitions
       if (lastVerdict && lastVerdict !== verdict.verdict) {
         const transition = `${lastVerdict} → ${verdict.verdict}`;
-        console.log(`\n  🔔 State change detected: ${transition}\n`);
+        console.log(`\n  [ALERT] State change detected: ${transition}\n`);
       }
       lastVerdict = verdict.verdict;
 
@@ -211,7 +214,7 @@ async function runWatch(options: WatchOptions): Promise<void> {
 
   // Keep process alive
   process.on('SIGINT', () => {
-    console.log('\n\n  ⚓ Harbourmaster watch stopped.\n');
+    console.log('\n\n  Harbourmaster watch stopped.\n');
     process.exit(0);
   });
 }

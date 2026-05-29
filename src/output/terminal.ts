@@ -48,21 +48,21 @@ const theme = {
 // ─── Icons ──────────────────────────────────────────────────
 
 const icons: Record<SourceStatus, string> = {
-  pass: '✅',
-  warn: '⚠️ ',
-  fail: '🔴',
+  pass: '[PASS]',
+  warn: '[WARN]',
+  fail: '[FAIL]',
 };
 
 const verdictIcons: Record<string, string> = {
-  GO: '🟢',
-  CAUTION: '🟡',
-  HOLD: '🔴',
+  GO: '[GO]',
+  CAUTION: '[CAUTION]',
+  HOLD: '[HOLD]',
 };
 
 // ─── Header ─────────────────────────────────────────────────
 
 export function renderHeader(options: CheckOptions): void {
-  const title = theme.brandBold('⚓ HARBOURMASTER CHECK');
+  const title = theme.brandBold('HARBOURMASTER CHECK');
   const meta = [
     options.service ? `service: ${theme.accent(options.service)}` : null,
     options.release ? `release: ${theme.accent(options.release)}` : null,
@@ -138,22 +138,22 @@ export function renderRiskScore(score: number): void {
 // ─── Verdict Box ────────────────────────────────────────────
 
 export function renderVerdict(verdict: Verdict): void {
-  const icon = verdictIcons[verdict.verdict] || '❓';
+  const icon = verdictIcons[verdict.verdict] || '[?]';
 
   let verdictStyled: string;
   let borderColor: string;
 
   switch (verdict.verdict) {
     case 'GO':
-      verdictStyled = theme.goBg(` ${icon}  GO `);
+      verdictStyled = theme.goBg(` ${icon} `);
       borderColor = '#10B981';
       break;
     case 'CAUTION':
-      verdictStyled = theme.cautionBg(` ${icon}  CAUTION `);
+      verdictStyled = theme.cautionBg(` ${icon} `);
       borderColor = '#F59E0B';
       break;
     case 'HOLD':
-      verdictStyled = theme.holdBg(` ${icon}  HOLD `);
+      verdictStyled = theme.holdBg(` ${icon} `);
       borderColor = '#EF4444';
       break;
     default:
@@ -324,8 +324,8 @@ export function renderHistory(
     table.push([time, entry.service, entry.release, verdictStyled, `${entry.riskScore}/100`]);
   }
 
-  console.log('');
-  console.log(theme.brandBold('  ⚓ Deploy History'));
+    console.log('');
+  console.log(theme.brandBold('  Deploy History'));
   console.log(table.toString());
   console.log('');
 }
@@ -335,7 +335,7 @@ export function renderHistory(
 export function renderWatchHeader(interval: number): void {
   console.log(
     boxen(
-      `${theme.brandBold('⚓ HARBOURMASTER WATCH')}\n${theme.dim(`Checking every ${interval}s · Press Ctrl+C to stop`)}`,
+      `${theme.brandBold('HARBOURMASTER WATCH')}\n${theme.dim(`Checking every ${interval}s · Press Ctrl+C to stop`)}`,
       {
         padding: { top: 0, bottom: 0, left: 2, right: 2 },
         borderStyle: 'round',
@@ -351,7 +351,7 @@ export function renderError(message: string, hint?: string): void {
   console.error('');
   console.error(
     boxen(
-      `${theme.hold('✖  Error')}\n\n  ${theme.white(message)}${hint ? `\n\n  ${theme.dim(hint)}` : ''}`,
+      `${theme.hold('[ERROR]')}\n\n  ${theme.white(message)}${hint ? `\n\n  ${theme.dim(hint)}` : ''}`,
       {
         padding: { top: 0, bottom: 0, left: 1, right: 1 },
         borderStyle: 'round',

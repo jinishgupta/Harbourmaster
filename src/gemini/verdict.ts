@@ -42,7 +42,6 @@ Respond ONLY with valid JSON in this exact schema:
   "verdict": "GO" | "HOLD" | "CAUTION",
   "confidence": "high" | "medium" | "low",
   "reasoning": "A plain-English paragraph of 3-5 sentences explaining the verdict. Reference specific data points from the sources. If HOLD, clearly state what needs to change before deploying. If GO, confirm what was checked.",
-  "riskScore": <number 0-100>,
   "onCall": [{"name": "<person>", "service": "<team/service>"}]
 }
 
@@ -87,15 +86,16 @@ export async function synthesizeVerdict(
       verdict: VerdictType;
       confidence: ConfidenceLevel;
       reasoning: string;
-      riskScore: number;
       onCall: Array<{ name: string; service: string }>;
     };
+
+    const local = computeLocalVerdict(snapshot);
 
     return {
       verdict: parsed.verdict,
       confidence: parsed.confidence,
       reasoning: parsed.reasoning,
-      riskScore: parsed.riskScore,
+      riskScore: local.riskScore,
       onCall: parsed.onCall || snapshot.pagerduty.details.onCall,
       timestamp: new Date().toISOString(),
     };
@@ -164,7 +164,7 @@ function formatSnapshotForPrompt(snapshot: ReadinessSnapshot): string {
 - In Progress: ${snapshot.linear.details.inProgressIssues}
 - Unresolved: ${snapshot.linear.details.unresolvedTitles.join(', ') || 'None'}
 
-Based on all 6 sources, provide the deployment verdict.
+Based on all 6 sources, and a mathematical risk score of ${computeLocalVerdict(snapshot).riskScore}/100, provide the deployment verdict.
   `.trim();
 }
 
